@@ -5,24 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
 </head>
-<body class="neumorphic">
-    <div class="container">
-        <h1>Dashboard</h1>
-        <p><a href="{{ url_for('logout') }}">Logout</a></p>
-        <h2>JSON Data</h2>
-        <pre id="jsonData"></pre>
+<body>
+    <h2>Dashboard</h2>
+    <p>Welcome to the dashboard!</p>
+    <div id="data-container">
+        <h3>Data</h3>
+        <ul id="data-list">
+            {% for key, value in data.items() %}
+                <li>{{ key }}: {{ value }}</li>
+            {% endfor %}
+        </ul>
     </div>
+    <form id="data-form">
+        <h3>Add Data</h3>
+        <div>
+            <label for="key">Key:</label>
+            <input type="text" id="key" name="key" required>
+        </div>
+        <div>
+            <label for="value">Value:</label>
+            <input type="text" id="value" name="value" required>
+        </div>
+        <div>
+            <button type="button" onclick="addData()">Add Data</button>
+        </div>
+    </form>
+
     <script>
-        function fetchData() {
-            fetch('/data')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('jsonData').textContent = JSON.stringify(data, null, 4);
-                });
+        function addData() {
+            var key = document.getElementById('key').value;
+            var value = document.getElementById('value').value;
+            var data = {
+                [key]: value
+            };
+            fetch('/data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                location.reload();
+            })
+            .catch(error => console.error('Error:', error));
         }
-        // Fetch data initially and then set up interval to fetch data periodically
-        fetchData();
-        setInterval(fetchData, 5000); // Fetch data every 5 seconds
     </script>
 </body>
 </html>
