@@ -1,17 +1,20 @@
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 import json
+import os
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # Change this to a more secure key
+app.secret_key = os.urandom(24)  # Use random secret key for session security
 
-# Sample username and password
+# Sample username and password (should ideally be stored securely)
 USERNAME = 'matedev'
-PASSWORD = 'M11T3'
+PASSWORD = '4117'
+
+DATA_FILE = 'data.json'
 
 # Load data from JSON file
 def load_data():
     try:
-        with open('data.json', 'r') as f:
+        with open(DATA_FILE, 'r') as f:
             data = json.load(f)
     except FileNotFoundError:
         data = {}
@@ -19,15 +22,15 @@ def load_data():
 
 # Save data to JSON file
 def save_data(data):
-    with open('data.json', 'w') as f:
+    with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=4)
 
 # Login route
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
         if username == USERNAME and password == PASSWORD:
             session['logged_in'] = True
             return redirect(url_for('dashboard'))
@@ -50,10 +53,22 @@ def logout():
     return redirect(url_for('login'))
 
 # API endpoint to get all data
-@app.route('/data', methods=['GET'])
-def get_data():
-    data = load_data()
-    return jsonify(data)
+@app.route('/data', methods=['GET', 'POST'])
+def handle_data():
+    if request.method == 'GET':
+        data = load_data()
+        return jsonify(data)
+    elif request.method == 'POST':
+        if not session.get('logged_in'):
+            return jsonify({'error': 'Authentication required'}), 401
+        try:
+            new_data = request.json
+            current_data = load_data()
+            current_data.update(new_data)
+            save_data(current_data)
+            return jsonify({'message': 'Data added successfully'}), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=True)
