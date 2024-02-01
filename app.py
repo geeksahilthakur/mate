@@ -24,7 +24,7 @@ def save_data(data):
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f, indent=4)
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
@@ -42,7 +42,7 @@ def dashboard():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     data = load_data()
-    return render_template('dashboard.html', data=data)
+    return render_template('dashboard.html', data=data.items())
 
 @app.route('/data', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def handle_data():
