@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
-from werkzeug.urls import url_quote
 import json
 
 app = Flask(__name__)
