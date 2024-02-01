@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'  # replace with your secret key
+app.config['SECRET_KEY'] = '4117'  # Secret key set to '4117'
 
 users = {
     'matedev': generate_password_hash('4117')
