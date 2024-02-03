@@ -3,25 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>JSON Server Client</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/neumorphism/0.3.1/css/neumorphism.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+        
+        .container {
+            padding: 20px;
+            border-radius: 20px;
+        }
+        
+        .form {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #data-container {
+            margin-top: 20px;
+        }
+        
+        .data-item {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body>
-    <h2>Login</h2>
-    <form action="/login" method="post">
-        <div>
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
+    <div class="container neumorphic">
+        <h1>JSON Server Client</h1>
+        <div class="form">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name">
+            <label for="age">Age:</label>
+            <input type="number" id="age" name="age">
+            <button onclick="addData()">Add Data</button>
         </div>
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        <div>
-            <button type="submit">Login</button>
-        </div>
-        {% if error %}
-            <p>{{ error }}</p>
-        {% endif %}
-    </form>
+        <div id="data-container"></div>
+    </div>
+
+    <script>
+        const url = 'http://localhost:5000/data';
+
+        // Function to fetch data from the server and display it
+        async function fetchData() {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const dataContainer = document.getElementById('data-container');
+            dataContainer.innerHTML = '';
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.classList.add('data-item');
+                div.innerHTML = `
+                    <p>ID: ${item.id}</p>
+                    <p>Name: ${item.name}</p>
+                    <p>Age: ${item.age}</p>
+                    <button onclick="deleteData(${item.id})">Delete</button>
+                `;
+                dataContainer.appendChild(div);
+            });
+        }
+
+        // Function to add data to the server
+        async function addData() {
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+
+            if (!name || !age) {
+                alert('Please enter name and age');
+                return;
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    age: age
+                })
+            });
+
+            if (response.status === 201) {
+                fetchData();
+            } else {
+                alert('Failed to add data');
+            }
+        }
+
+        // Function to delete data from the server
+        async function deleteData(id) {
+            const response = await fetch(`${url}/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.status === 200) {
+                fetchData();
+            } else {
+                alert('Failed to delete data');
+            }
+        }
+
+        // Initial fetch when the page loads
+        fetchData();
+    </script>
 </body>
 </html>
+  
