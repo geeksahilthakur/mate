@@ -1,71 +1,60 @@
-from flask import Flask, request, session, redirect, url_for, render_template, jsonify
-from werkzeug.security import check_password_hash, generate_password_hash
-import os
+from flask import Flask, request, jsonify
 import json
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key'  # replace with your secret key
+JSON_FILE = 'data.json'
 
-users = {
-    'matedev': generate_password_hash('4117')
-}
-
-DATA_FILE = 'data.json'
-
-def load_data():
+# Helper function to read data from the JSON file
+def read_data():
     try:
-        with open(DATA_FILE, 'r') as f:
-            data = json.load(f)
+        with open(JSON_FILE, 'r') as file:
+            data = json.load(file)
     except FileNotFoundError:
-        data = {}
+        data = []
     return data
 
-def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=4)
+# Helper function to write data to the JSON file
+def write_data(data):
+    with open(JSON_FILE, 'w') as file:
+        json.dump(data, file, indent=4)
 
-@app.route('/index', methods=['GET', 'POST'])
-def login():
-    error = None
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        if username in users and check_password_hash(users[username], password):
-            session['logged_in'] = True
-            return redirect(url_for('dashboard'))
-        else:
-            error = 'Invalid username or password.'
-    return render_template('index.html', error=error)
+# Route to get all data
+@app.route('/data', methods=['GET'])
+def get_data():
+    data = read_data()
+    return jsonify(data)
 
-@app.route('/dashboard')
-def dashboard():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    data = load_data()
-    return render_template('dashboard.html', data=data.items())
+# Route to add new data
+@app.route('/data', methods=['POST'])
+def add_data():
+    new_data = request.json
+    data = read_data()
+    data.append(new_data)
+    write_data(data)
+    return jsonify(new_data), 201
 
-@app.route('/data', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def handle_data():
-    if not session.get('logged_in'):
-        return jsonify({'error': 'Authentication required'}), 401
-    data = load_data()
-    if request.method == 'GET':
-        return jsonify(data)
-    elif request.method == 'POST':
-        new_data = request.json
-        data.update(new_data)
-        save_data(data)
-        return jsonify({'message': 'Data added successfully'}), 200
-    elif request.method == 'PUT':
-        updated_data = request.json
-        data.update(updated_data)
-        save_data(data)
-        return jsonify({'message': 'Data updated successfully'}), 200
-    elif request.method == 'DELETE':
-        for key in request.json.keys():
-            data.pop(key, None)
-        save_data(data)
-        return jsonify({'message': 'Data deleted successfully'}), 200
+# Route to update data by ID
+@app.route('/data/<int:id>', methods=['PUT'])
+def update_data(id):
+    updated_data = request.json
+    data = read_data()
+    for item in data:
+        if item.get('id') == id:
+            item.update(updated_data)
+            write_data(data)
+            return jsonify(updated_data), 200
+    return jsonify({'error': 'Data not found'}), 404
+
+# Route to delete data by ID
+@app.route('/data/<int:id>', methods=['DELETE'])
+def delete_data(id):
+    data = read_data()
+    for index, item in enumerate(data):
+        if item.get('id') == id:
+            del data[index]
+            write_data(data)
+            return jsonify({'message': 'Data deleted'}), 200
+    return jsonify({'error': 'Data not found'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=True)
